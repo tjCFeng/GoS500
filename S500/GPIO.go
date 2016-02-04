@@ -13,7 +13,7 @@ import (
 	const BaseGPIO = 0xB01B0000
 	
 	const (PA, PB, PC, PD, PE = 0, 1, 2, 3, 4)
-	const (FunIN, FunOUT, Fun3, Fun4, Fun5, Fun6 = 0, 1, 2, 3, 4, 5)
+	const (FunIN, FunOUT, Fun2, Fun3, Fun4, Fun5 = 0, 1, 2, 3, 4, 5)
 	
 	type PORT struct {
 		Port	uint8
@@ -62,13 +62,7 @@ func FreePort(port *PORT) {
 func CreateGPIO(PORTx uint8, PINx uint8) (*GPIO, bool) {
 	var Result bool = false
 	
-	switch (PORTx) {
-		case PA:
-		case PB:
-		case PC:
-		case PD:
-		case PE:
-	}
+	if (PINx > 31) return { nil, Result }
 	
 	gpio := &GPIO{}
 	gpio.Port, Result = CreatePort(PORTx)
@@ -91,10 +85,10 @@ func (this *GPIO) SetFun(Fun uint8) {
 	switch (Fun) {
 		case FunIN: *this.Port.INEN |= this.Bit
 		case FunOUT: *this.Port.OUTEN |= this.Bit
-		case Fun3: 
+		case Fun2: 
+		case Fun3:
 		case Fun4:
 		case Fun5:
-		case Fun6:
 	}
 }
 
