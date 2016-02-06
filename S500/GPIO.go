@@ -13,7 +13,7 @@ import (
 	const BaseGPIO = 0xB01B0000
 	
 	const (PA, PB, PC, PD, PE = 0, 1, 2, 3, 4)
-	const (FunIN, FunOUT, Fun2, Fun3, Fun4, Fun5 = 0, 1, 2, 3, 4, 5)
+	const (FunIN, FunOUT = 0, 1)
 	
 	type PORT struct {
 		Port	uint8
@@ -22,8 +22,6 @@ import (
 		OUTEN	*uint32
 		INEN	*uint32
 		DAT		*uint32
-		
-		MFP		[4]*uint32
 	}
 	
 func CreatePort(PORTx uint8) (*PORT, bool) {
@@ -39,12 +37,7 @@ func CreatePort(PORTx uint8) (*PORT, bool) {
 	port.OUTEN, Result = IS500().Register(port.hMem, Reg + 0x00)
 	port.INEN, Result = IS500().Register(port.hMem, Reg + 0x04)
 	port.DAT, Result = IS500().Register(port.hMem, Reg + 0x08)
-	
-	port.MFP[0], Result = IS500().Register(port.hMem, Reg + 0x40)
-	port.MFP[1], Result = IS500().Register(port.hMem, Reg + 0x44)
-	port.MFP[2], Result = IS500().Register(port.hMem, Reg + 0x48)
-	port.MFP[3], Result = IS500().Register(port.hMem, Reg + 0x4C)
-	
+
 	return port, Result
 }
 
@@ -61,13 +54,11 @@ func FreePort(port *PORT) {
 	
 func CreateGPIO(PORTx uint8, PINx uint8) (*GPIO, bool) {
 	var Result bool = false
-	
-	if (PINx > 31) return { nil, Result }
-	
+
 	gpio := &GPIO{}
 	gpio.Port, Result = CreatePort(PORTx)
 	if !Result { return nil, Result }
-	
+
 	gpio.Pin = PINx
 	gpio.Bit = (0x1 << PINx)
 	
@@ -79,17 +70,7 @@ func FreeGPIO(gpio *GPIO) {
 }
 
 func (this *GPIO) SetFun(Fun uint8) {
-	*this.Port.OUTEN &^= this.Bit
-	*this.Port.INEN &^= this.Bit
-	
-	switch (Fun) {
-		case FunIN: *this.Port.INEN |= this.Bit
-		case FunOUT: *this.Port.OUTEN |= this.Bit
-		case Fun2: 
-		case Fun3:
-		case Fun4:
-		case Fun5:
-	}
+	IMFP().SetGPIO(this, Fun)
 }
 
 func (this *GPIO) SetData(Data bool) {
