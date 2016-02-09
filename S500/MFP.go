@@ -69,12 +69,40 @@ func (this *MFP) SetPWM(gpio *GPIO, PWMx uint8) {
 	}
 }
 
-func (this *MFP) SetTWI(sda *GPIO, scl *GPIO, TWIx uint8) {
+func (this *MFP) SetTWI(SDA *GPIO, SCL *GPIO, TWIx uint8) {
 	if TWIx > TWI_3 { return }
-	this.CloseGPIO(sda)
-	this.CloseGPIO(scl)
+	this.CloseGPIO(SDA)
+	this.CloseGPIO(SCL)
 	
 	switch (TWIx) {
 		case TWI_2: 
 	}
 }
+
+func (this *MFP) SetSPI(MOSI *GPIO, MISO *GPIO, SCLK *GPIO, CS *GPIO, SPIx uint8) {
+	if SPIx > SPI_3 { return }
+	
+	this.CloseGPIO(MOSI)
+	this.CloseGPIO(MISO)
+	this.CloseGPIO(SCLK)
+	this.CloseGPIO(CS)
+	
+	switch (SPIx) {
+		case SPI_0:
+			if (SCLK.Port.Port == PC) && (SCLK.Pin == 22) {
+				//MOSI
+				*this.MFP_CTL[1] &^= (0x3 << 19)
+				*this.MFP_CTL[1] |= (0x2 << 19)
+				//SCLK
+				*this.MFP_CTL[1] &^= (0x3 << 17)
+				*this.MFP_CTL[1] |= (0x2 << 17)
+				//MISO
+				*this.MFP_CTL[1] &^= (0x7 << 7)
+				*this.MFP_CTL[1] |= (0x4 << 7)
+				//SS
+				*this.MFP_CTL[2] &^= (0x7 << 24)
+				*this.MFP_CTL[2] |= (0x4 << 24)
+			}
+	}
+}
+
