@@ -24,6 +24,7 @@ import (
 		PWM2CLK	*uint32
 		PWM3CLK	*uint32
 		DEVCLKEN	[2]*uint32
+		DEVRST		[2]*uint32
 	}
 
 func ICMU() (*CMU) {
@@ -40,6 +41,8 @@ func ICMU() (*CMU) {
 		iCMU.PWM3CLK, _ = IS500().Register(iCMU.hMem, Reg + 0x7C)
 		iCMU.DEVCLKEN[0], _ = IS500().Register(iCMU.hMem, Reg + 0xA0)
 		iCMU.DEVCLKEN[1], _ = IS500().Register(iCMU.hMem, Reg + 0xA4)
+		iCMU.DEVRST[0], _ = IS500().Register(iCMU.hMem, Reg + 0xA0)
+		iCMU.DEVRST[1], _ = IS500().Register(iCMU.hMem, Reg + 0xAC)
 	}
 
 	return iCMU
@@ -80,5 +83,15 @@ func (this *CMU) SetTWICLK(TWIx uint8, Enable bool) {
 				case false: *this.DEVCLKEN[1] &^= (0x1 << 31)
 				case true: *this.DEVCLKEN[1] |= (0x1 << 31)
 			}
+	}
+}
+
+func (this *CMU) SetSPICLK(SPIx uint8, Enable bool) {
+	*this.DEVRST[1] &^= (0x1 << (8 + SPIx))
+	switch (Enable) {
+		case false: *this.DEVCLKEN[1] &^= (0x1 << (10 + SPIx))
+		case true:
+			*this.DEVCLKEN[1] |= (0x1 << (10 + SPIx))
+			*this.DEVRST[1] |= (0x1 << (8 + SPIx))
 	}
 }
