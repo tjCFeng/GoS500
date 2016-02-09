@@ -1,7 +1,7 @@
 package Device
 
 import (
-	"https://github.com/tjCFeng/S500"
+	"github.com/tjCFeng/GoS500/S500"
 )
 
 	var iSSD1306 *SSD1306 = nil
