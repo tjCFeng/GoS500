@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"github.com/tjCFeng/GoS500/S500"
+	"github.com/tjCFeng/GoS500/Device"
 )
 
 func main() {
@@ -29,6 +30,11 @@ func main() {
 	PWM3.SetPolarity(true)
 	PWM3.SetPeriod(1000)
 	PWM3.SetDuty(500)
+	
+	Device.ISSD1306().Open()
+	defer Device.FreeSSD1306()
+	Device.ISSD1306().Writes(0, 0, []uint8("LeMaker Guitar"))
+	Device.ISSD1306().Writes(0, 1, []uint8(" -- www.ICKey.cn"))
 	
 	reader := bufio.NewReader(os.Stdin)
 	for {
