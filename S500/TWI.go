@@ -7,7 +7,7 @@
 package S500
 
 import (
-
+	
 )
 
 	const BaseTWI0 = 0xB0170000
@@ -19,7 +19,7 @@ import (
 	const (TWI_Slave, TWI_Master = 0, 1)
 	const (TWI_SpeedLow, TWI_SpeedHigh = 0, 1)
 	
-	/*
+/*
 	SPI0_SS/GPIOC23		TWI3_SCL
 	SPI0_MOSI/GPIOC25		TWI3_SDA
 	
@@ -38,6 +38,21 @@ import (
 	TWI2_SCLK/GPIOE2		TWI2_SCL
 	TWI2_SDATA/GPIOE3		TWI2_SDA
 	*/
+	
+	const I2C_FIFOSTAT_CECB = (0x1 << 0)
+	const I2C_FIFOSTAT_RNB = (0x1 << 1)
+	
+	const I2C_CMD_SBE			= (0x1 << 0)
+	const I2C_CMD_AS_MASK	= (0x7 << 1)
+	const I2C_CMD_RBE			= (0x1 << 4)
+	const I2C_CMD_SAS_MASK	= (0x7 << 5)
+	const I2C_CMD_DE			= (0x1 << 8)
+	const I2C_CMD_NS			= (0x1 << 9)
+	const I2C_CMD_SE			= (0x1 << 10)
+	const I2C_CMD_MSS			= (0x1 << 11)
+	const I2C_CMD_WRS			= (0x1 << 12)
+	const I2C_CMD_EXEC		= (0x1 << 15)
+	const I2C_CMD_X = I2C_CMD_EXEC | I2C_CMD_MSS | I2C_CMD_SE | I2C_CMD_DE | I2C_CMD_SBE
 	
 	type TWI struct {
 		sda		*GPIO;
@@ -64,16 +79,19 @@ func CreateTWI(SDA *GPIO, SCL *GPIO, TWIx uint8) (*TWI, bool) {
 	
 	if (TWIx > TWI_3) { return nil, Result }
 
+	var BaseAddr uint32 = 0
 	twi := &TWI{twix: TWIx}
 	switch (TWIx) {
-		case TWI_0: twi.hMem, Result = IS500().GetMMap(BaseTWI0)
-		case TWI_1: twi.hMem, Result = IS500().GetMMap(BaseTWI1)
-		case TWI_2: twi.hMem, Result = IS500().GetMMap(BaseTWI2)
-		case TWI_3: twi.hMem, Result = IS500().GetMMap(BaseTWI3)
+		case TWI_0: BaseAddr = BaseTWI0
+		case TWI_1: BaseAddr = BaseTWI1
+		case TWI_2: BaseAddr = BaseTWI2
+		case TWI_3: BaseAddr = BaseTWI3
 	}
+	
+	twi.hMem, Result = IS500().GetMMap(BaseAddr)
 	if !Result { return nil, Result }
 	
-	Reg := uint32(BaseGPIO & 0x00000FFF)
+	Reg := uint32(BaseAddr & 0x00000FFF)
 	twi.TWI_CTL, Result = IS500().Register(twi.hMem, Reg + 0x00)
 	twi.TWI_DIV, Result = IS500().Register(twi.hMem, Reg + 0x04)
 	twi.TWI_STAT, Result = IS500().Register(twi.hMem, Reg + 0x08)
@@ -90,9 +108,11 @@ func CreateTWI(SDA *GPIO, SCL *GPIO, TWIx uint8) (*TWI, bool) {
 	twi.scl = SCL
 	IMFP().SetTWI(SDA, SCL, TWIx)
 	ICMU().SetTWICLK(TWIx, true)
-	
-	*twi.TWI_CMD |= (0x1 << 8)
-	*this.TWI_CTL |= (0x1 << 7)
+
+	*twi.TWI_DIV = 0x3F
+	*twi.TWI_CTL |= 0x80
+	*twi.TWI_FIFOCTL = 0x06
+	*twi.TWI_DATCNT = 0
 	
 	return twi, Result
 }
@@ -103,16 +123,7 @@ func FreeTWI(twi *TWI) {
 	if (twi.scl != nil) { FreeGPIO(twi.scl) }
 }
 
-func (this *TWI) Start() {
-	*this.TWI_CTL |= (0x1 << 7)
-}
-
-func (this *TWI) Stop() {
-	*this.TWI_CTL &^= (0x1 << 7)
-}
-
 func (this *TWI) SetMode(Mode uint8) {
-	
 	switch (Mode) {
 		case TWI_Slave: *this.TWI_CMD &^= (0x1 << 11)
 		case TWI_Master: *this.TWI_CMD |= (0x1 << 11)
@@ -121,12 +132,65 @@ func (this *TWI) SetMode(Mode uint8) {
 
 func (this *TWI) SetSpeed(Speed uint8) {
 	switch (Speed) {
-		case TWI_SpeedLow: *this.TWI_CTL &^= (0x1 << 10)
-		case TWI_SpeedHigh: *this.TWI_CTL |= (0x1 << 10)
-		
+		case TWI_SpeedLow: *this.TWI_DIV = 0x3F //100K
+		case TWI_SpeedHigh: *this.TWI_DIV = 0x10 //400K
 	}
 }
 
-func (this *TWI) SetSlaveAddr(SlaveAddr uint8) {
-	*this.TWI_ADDR = uint32(SlaveAddr)
+func (this *TWI) Write(Addr uint8, Reg uint8, Data []uint8) bool {
+	var I uint32 = 0
+	var Len uint32 = uint32(len(Data))
+	
+	*this.TWI_CTL |= 0x80
+	*this.TWI_DATCNT = Len
+	*this.TWI_TXDAT = uint32(Addr << 1)
+	*this.TWI_TXDAT = uint32(Reg)
+	for I = 0; I < Len; I++ { *this.TWI_TXDAT = uint32(Data[I]) }
+	*this.TWI_CMD = I2C_CMD_X + (0x2 << 1)
+	
+	for I = 0; I < 0xFFFF; I++ {
+		if (*this.TWI_FIFOSTAT & I2C_FIFOSTAT_RNB) == I2C_FIFOSTAT_RNB {
+			*this.TWI_FIFOSTAT |= I2C_FIFOSTAT_RNB
+			*this.TWI_FIFOCTL = 0x06
+			for {
+				if (*this.TWI_FIFOCTL & 0x06) != 0x06 { break }
+			}
+			return false
+		}
+		if (*this.TWI_FIFOSTAT & I2C_FIFOSTAT_CECB) == I2C_FIFOSTAT_CECB { return true }
+	}
+	
+	return false
+}
+
+func (this *TWI) Read(Addr uint8, Reg uint8, DataLen uint8) ([]uint8, bool) {
+	var I uint32 = 0
+	var Len uint32 = uint32(DataLen)
+	var Data []uint8 = make([]uint8, DataLen)
+	
+	*this.TWI_CTL |= 0x80
+	*this.TWI_DATCNT = Len
+	*this.TWI_TXDAT = uint32(Addr << 1)
+	*this.TWI_TXDAT = uint32(Reg)
+	*this.TWI_TXDAT = uint32((Addr << 1) | 1)
+	*this.TWI_CMD = I2C_CMD_X + I2C_CMD_RBE + I2C_CMD_NS + (0x1 << 5) + (0x2 << 1)
+		
+	for I = 0; I < 0xFFFF; I++ {
+		if (*this.TWI_FIFOSTAT & I2C_FIFOSTAT_RNB) == I2C_FIFOSTAT_RNB {
+			*this.TWI_FIFOSTAT |= I2C_FIFOSTAT_RNB
+			*this.TWI_FIFOCTL = 0x06
+			for {
+				if (*this.TWI_FIFOCTL & 0x06) != 0x06 { break }
+			}
+			return nil, false
+		}
+		if (*this.TWI_FIFOSTAT & I2C_FIFOSTAT_CECB) == I2C_FIFOSTAT_CECB {
+			for I = 0; I < Len; I++ {
+				Data[I] = uint8(*this.TWI_RXDAT)
+			}
+			return Data, true
+		}
+	}
+	
+	return nil, false
 }
