@@ -1,7 +1,7 @@
 package Device
 
 import (
-	"../S500"
+	"github.com/tjCFeng/GoS500/S500"
 )
 
 	const DS3231_ADDR = 0x68
