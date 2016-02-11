@@ -52,6 +52,11 @@ func main() {
 	TWI2.Write(HMC5883ADDR, 0x00, []uint8{0x14})
 	TWI2.Write(HMC5883ADDR, 0x01, []uint8{0x20})
 	TWI2.Write(HMC5883ADDR, 0x02, []uint8{0x00})
+	
+	
+	//fmt.Println(Device.IDS3231().Write(16, 2, 11, 20, 24, 30, 4))
+	fmt.Println(Device.IDS3231().Read())
+	fmt.Println(Device.IDS3231().Temperature())
 
 	go func () {
 		for {
