@@ -47,27 +47,38 @@ func ICMU() (*CMU) {
 
 	return iCMU
 }
-
+oo
 func FreeCMU() {
 	if iCMU != nil { IS500().FreeMMap(iCMU.hMem) }
+}
+
+func (this *CMU) SetPWMCLK(PWMx uint8, Enable bool) {
+	switch (PWMx) {
+		case PWM_3:
+			switch (Enable) {
+				case false: *this.DEVCLKEN[1] &^= (0x1 << 26)
+				case true: *this.DEVCLKEN[1] |= (0x1 << 26)
+			}
+	}
 }
 
 func (this *CMU) SetPWMSRC(PWMx uint8, SRC uint8) {
 	if SRC > PWM_HOSC_24M { return }
 	switch (PWMx) {
 		case PWM_3:
-			*this.DEVCLKEN[1] &^= (0x1 << 26)
-			*this.PWM3CLK &^= (0x1 << 12)
-			*this.PWM3CLK |= uint32(SRC << 12)
-			*this.DEVCLKEN[1] |= (0x1 << 26)
+			switch (SRC) {
+				case 0: *this.PWM3CLK &^= (0x1 << 12)
+				case 1: *this.PWM3CLK |= uint32(SRC << 12)
+			}
 	}
 }
 
 func (this *CMU) SetPWMDIV(PWMx uint8, DIV uint16) {
+	
 	switch (PWMx) {
 		case PWM_3: 
-			*this.PWM3CLK &^= 0x3FF
-			*this.PWM3CLK |= uint32(DIV)
+			SRC := *this.PWM3CLK & (0x1 << 12)
+			*this.PWM3CLK = SRC + uint32(DIV)
 	}
 }
 
