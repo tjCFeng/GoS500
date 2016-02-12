@@ -92,23 +92,21 @@ func (this *PWM) SetDIV(DIV uint16) {
 }
 
 func (this *PWM) SetPeriod(Period uint16) {
-	if (Period > 0x3FF) { return }
-	
-	*this.PWM_CTL &^= 0x3FF
-	*this.PWM_CTL |= uint32(Period)
+	Val := *this.PWM_CTL
+	Val &^= 0x3FF
+	*this.PWM_CTL = Val + uint32(Period & 0x3FF)
 }
 
 func (this *PWM) SetDuty(Duty uint16) {
-	if (Duty > 0x3FF) { return }
-	
-	*this.PWM_CTL &^= (0x3FF << 10)
-	*this.PWM_CTL |= uint32(Duty << 10)
+	Val := *this.PWM_CTL
+	Val &^= (0x3FF << 10)
+	*this.PWM_CTL = Val + uint32((Duty & 0x3FF) << 10)
 }
 
 func (this *PWM) Start() {
-
+	ICMU().SetPWMCLK(this.pwmx, true)
 }
 
 func (this *PWM) Stop() {
-
+	ICMU().SetPWMCLK(this.pwmx, false)
 }
