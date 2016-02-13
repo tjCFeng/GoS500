@@ -1,7 +1,7 @@
 package Device
 
 import (
-	"github.com/tjCFeng/GoS500/S500"
+	"../S500"
 )
 
 	const DS3231_ADDR = 0x68
@@ -75,6 +75,7 @@ func (this *DS3231) Write(Year uint8, Month uint8, Day uint8, Hour uint8, Minute
 
 func (this *DS3231) Read() ([]uint8, bool) { //Year, Month, Day, Hour, Minute, Second, Week
 	Buf, Result := this.twi.Read(DS3231_ADDR, RTC_SEC_REG_ADDR, 7)
+	if !Result { return []uint8{0, 0, 0, 0, 0, 0, 0}, Result }
 	
 	DT := []uint8{0, 0, 0, 0, 0, 0, 0}
 	DT[0] = this.bcd2bin(Buf[6])
@@ -88,7 +89,8 @@ func (this *DS3231) Read() ([]uint8, bool) { //Year, Month, Day, Hour, Minute, S
 }
 
 func (this *DS3231) Temperature() float32 {
-	this.twi.Write(DS3231_ADDR, RTC_CTL_REG_ADDR, []uint8{0x20})
+	Result := this.twi.Write(DS3231_ADDR, RTC_CTL_REG_ADDR, []uint8{0x20})
+	if !Result { return 255.0}
 	Buf, _ := this.twi.Read(DS3231_ADDR, 0x11, 2)
 	//if Buf[0] > 0x85 { Buf[0] = 0xFF - Buf[0]}
 	return float32(this.bcd2bin(Buf[0])) + float32(this.bcd2bin(Buf[1])) / 100
