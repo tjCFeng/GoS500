@@ -47,7 +47,7 @@ func ICMU() (*CMU) {
 
 	return iCMU
 }
-oo
+
 func FreeCMU() {
 	if iCMU != nil { IS500().FreeMMap(iCMU.hMem) }
 }
@@ -84,6 +84,11 @@ func (this *CMU) SetPWMDIV(PWMx uint8, DIV uint16) {
 
 func (this *CMU) SetTWICLK(TWIx uint8, Enable bool) {
 	switch (TWIx) {
+		case TWI_0:
+			switch (Enable) {
+				case false: *this.DEVCLKEN[1] &^= (0x1 << 14)
+				case true: *this.DEVCLKEN[1] |= (0x1 << 14) 
+			}
 		case TWI_2:
 			switch (Enable) {
 				case false: *this.DEVCLKEN[1] &^= (0x1 << 30)
