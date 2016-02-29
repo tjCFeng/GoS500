@@ -1,7 +1,7 @@
 package Device
 
 import (
-	"../S500"
+	"github.com/tjCFeng/GoS500/S500"
 )
 
 	const ATC2603C_TWI	= S500.TWI_0
