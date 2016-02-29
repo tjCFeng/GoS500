@@ -104,9 +104,11 @@ func CreateTWI(SDA *GPIO, SCL *GPIO, TWIx uint8) (*TWI, bool) {
 	twi.TWI_DATCNT, Result = IS500().Register(twi.hMem, Reg + 0x24)
 	twi.TWI_RCNT, Result = IS500().Register(twi.hMem, Reg + 0x28)
 	
-	twi.sda = SDA
-	twi.scl = SCL
-	IMFP().SetTWI(SDA, SCL, TWIx)
+	if (SDA != nil) && (SCL != nil) {
+		twi.sda = SDA
+		twi.scl = SCL
+		IMFP().SetTWI(SDA, SCL, TWIx)
+	}
 	ICMU().SetTWICLK(TWIx, true)
 
 	*twi.TWI_DIV = 0x3F
