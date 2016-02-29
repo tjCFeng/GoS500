@@ -98,11 +98,13 @@ func CreateSPI(MOSI *GPIO, MISO *GPIO, SCLK *GPIO, CS *GPIO, SPIx uint8) (*SPI, 
 	spi.SPI_TXCR, Result = IS500().Register(spi.hMem, Reg + 0x1C)
 	spi.SPI_RXCR, Result = IS500().Register(spi.hMem, Reg + 0x20)
 	
-	spi.mosi = MOSI
-	spi.miso = MISO
-	spi.sclk = SCLK
-	spi.cs = CS
-	IMFP().SetSPI(MOSI, MISO, SCLK, CS, SPIx)
+	if (MOSI != nil) && (MISO != nil) && (SCLK != nil) && (CS != nil) {
+		spi.mosi = MOSI
+		spi.miso = MISO
+		spi.sclk = SCLK
+		spi.cs = CS
+		IMFP().SetSPI(MOSI, MISO, SCLK, CS, SPIx)
+	}
 	ICMU().SetSPICLK(SPIx, true)
 	
 	
@@ -174,4 +176,3 @@ func (this *SPI) RW8Bit(Data []uint8) ([]uint8, uint32) {
 	
 	return  Buf, Count
 }
-
