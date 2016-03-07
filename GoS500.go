@@ -73,7 +73,7 @@ func main() {
 	fmt.Println("WALL:", Device.IATC2603C().CurrentMA(Device.A_WALL), "mA")
 	Data := Device.IATC2603C().ADC(0)
 	fmt.Println("ADC Data:", Data)
-	fmt.Println("ADC0:", Device.IATC2603C().ConvertADC(Data), "mV")
+	fmt.Println("ADC0:", Device.IATC2603C().ConvertADCmV(Data), "mV")
 	defer Device.FreeATC2603C()
 	
 	reader := bufio.NewReader(os.Stdin)
