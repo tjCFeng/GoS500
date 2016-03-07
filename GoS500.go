@@ -67,11 +67,13 @@ func main() {
 	fmt.Println(Device.IDS3231().Temperature())
 	
 	/*ATC2603C*/
-	fmt.Println(Device.IATC2603C().Version())
-	fmt.Println(Device.IATC2603C().Temperature(), "C")
-	fmt.Println(Device.IATC2603C().VoltageMV(Device.V_SYSPWR), "mV")
-	fmt.Println(Device.IATC2603C().CurrentMA(Device.A_WALL), "mA")
-	fmt.Println(Device.IATC2603C().ADC(0))
+	fmt.Println("Ver:", Device.IATC2603C().Version())
+	fmt.Println("Temperature:", Device.IATC2603C().Temperature(), "C")
+	fmt.Println("SYSPWR:", Device.IATC2603C().VoltageMV(Device.V_SYSPWR), "mV")
+	fmt.Println("WALL:", Device.IATC2603C().CurrentMA(Device.A_WALL), "mA")
+	Data := Device.IATC2603C().ADC(0)
+	fmt.Println("ADC Data:", Data)
+	fmt.Println("ADC0:", Device.IATC2603C().ConvertADC(Data), "mV")
 	defer Device.FreeATC2603C()
 	
 	reader := bufio.NewReader(os.Stdin)
