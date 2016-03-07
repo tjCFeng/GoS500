@@ -239,7 +239,7 @@ func (this *ATC2603C) Temperature() float32 {
 	return float32((uint16(Data[0]) << 8) + uint16(Data[1])) * 0.1949 - 44.899
 }
 
-func (this *ATC2603C) VoltageMV(Index uint8) float32 {
+func (this *ATC2603C) VoltageMV(Index uint8) uint32 {
 	switch (Index) {
 		case V_WALL, V_VBUS, V_SYSPWR:
 		default: return 0.0
@@ -250,37 +250,41 @@ func (this *ATC2603C) VoltageMV(Index uint8) float32 {
 	
 	V := (uint32(Data[0]) << 8) + uint32(Data[1])
 	V *= uint32(Data[0])
-	return float32(V) * 2.5
+	return uint32(float32(V) * 2.5)
 }
 
-func (this *ATC2603C) CurrentMA(Index uint8) float32 {
-	var DBG, REF uint16
+func (this *ATC2603C) CurrentMA(Index uint8) uint32 {
+	var DBG, REF uint32
 	
 	switch (Index) {
 		case A_WALL:
 			Data, Result := this.Read(ATC2603C_PMU_ADC_DBG2, 2)
 			if !Result { return 0.0 }
-			DBG = (uint16(Data[0]) << 8) + uint16(Data[1])
+			DBG = (uint32(Data[0]) << 8) + uint32(Data[1])
 			Data, Result = this.Read(ATC2603C_PMU_IREFADC, 2)
 			if !Result { return 0.0 }
-			REF = (uint16(Data[0]) << 8) + uint16(Data[1])
-			return float32(DBG) / float32(REF) * 1527
+			REF = (uint32(Data[0]) << 8) + uint32(Data[1])
+			return uint32(float32(DBG) / float32(REF) * 1527)
 		case A_VBUS:
 			Data, Result := this.Read(ATC2603C_PMU_ADC_DBG1, 2)
 			if !Result { return 0.0 }
-			DBG = (uint16(Data[0]) << 8) + uint16(Data[1])
+			DBG = (uint32(Data[0]) << 8) + uint32(Data[1])
 			Data, Result = this.Read(ATC2603C_PMU_IREFADC, 2)
 			if !Result { return 0.0 }
-			REF = (uint16(Data[0]) << 8) + uint16(Data[1])
-			return float32(DBG) / float32(REF) * 1509
+			REF = (uint32(Data[0]) << 8) + uint32(Data[1])
+			return uint32(float32(DBG) / float32(REF) * 1509)
 		default: return 0.0
 	}
 }
 
-func (this *ATC2603C) ADC(Index uint8) uint16 {
+func (this *ATC2603C) ADC(Index uint8) uint32 {
 	if (Index > 2) { return 0 }
 	
 	Data, Result := this.Read(ATC2603C_PMU_AUXADC0 + Index, 2)
 	if !Result { return 0 }
-	return ((uint16(Data[0]) << 8) + uint16(Data[1])) & 0x400
+	return ((uint32(Data[0]) << 8) + uint32(Data[1])) & 0x3FF
+}
+
+func (this *ATC2603C) ConvertADC(Data uint32) uint32 {
+	return Data * 3000 / 1023
 }
