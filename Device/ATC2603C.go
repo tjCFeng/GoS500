@@ -285,6 +285,6 @@ func (this *ATC2603C) ADC(Index uint8) uint32 {
 	return ((uint32(Data[0]) << 8) + uint32(Data[1])) & 0x3FF
 }
 
-func (this *ATC2603C) ConvertADC(Data uint32) uint32 {
+func (this *ATC2603C) ConvertADCmV(Data uint32) uint32 {
 	return Data * 3000 / 1023
 }
